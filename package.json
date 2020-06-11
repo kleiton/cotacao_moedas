@@ -1,0 +1,15 @@
+{
+  "name": "cotacao_moedas",
+  "version": "1.0.0",
+  "description": "cotacao",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Kleiton Moraes",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "xml-js": "^1.6.11"
+  }
+}
