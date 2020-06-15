@@ -15,15 +15,17 @@
  */
 var cron = require("node-cron");
 
-var axios = require('axios');
+var axios = require("axios");
 
-var fs = require('fs');
+var convert = require("xml-js");
 
-var convert = require('xml-js'); //const util = require('./utils/utils');
+var _require = require("./utils/utils"),
+    escreverArquivo = _require.escreverArquivo,
+    dataAtualFormatada = _require.dataAtualFormatada; //outra forma de importar várias funções do mesmo arquivo
 
 
-var dataInicial = '01-01-1990';
-var dataFinal = '12-31-2020';
+var dataInicial = "01-01-1990";
+var dataFinal = "12-31-2020";
 var link = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@dataInicial=%27".concat(dataInicial, "%27&@dataFinalCotacao=%27").concat(dataFinal, "%27&$format=json&$select=cotacaoCompra,cotacaoVenda,dataHoraCotacao");
 
 var getCotacao = function getCotacao() {
@@ -52,7 +54,7 @@ var getCotacao = function getCotacao() {
 };
 
 var retornaCotacao = function retornaCotacao() {
-  var dados, valores, options, resultado, regexXMLInicio, regexXMLFim, data, diretorio, diretorioTeste;
+  var dados, options, regexXMLInicio, regexXMLFim, data, diretorioLucas, diretorioLocal, valores, resultado;
   return regeneratorRuntime.async(function retornaCotacao$(_context2) {
     while (1) {
       switch (_context2.prev = _context2.next) {
@@ -62,36 +64,25 @@ var retornaCotacao = function retornaCotacao() {
 
         case 2:
           dados = _context2.sent;
-          valores = dados.data.value;
           options = {
             compact: true,
             spaces: 4,
             ignoreText: false
           };
-          resultado = convert.js2xml(valores, options); //const diretorio = "/\SF009144/\Lucas/\GDP";
-
           regexXMLInicio = /<[0-9]+>/gm;
           regexXMLFim = /<\/[0-9]+>/gm;
-          data = new Date(); //São aplicadas alterações nos dados retornados pelo WS, isso é necessário para que o Qlikview entenda a esrutura dos dados
+          data = dataAtualFormatada();
+          diretorioLucas = "//SF009144/Lucas/GDP/cotacoes.xml";
+          diretorioLocal = "./cotacoes.xml";
+          valores = dados.data.value;
+          resultado = convert.js2xml(valores, options); //São aplicadas alterações nos dados retornados pelo WS, isso é necessário para que o Qlikview entenda a esrutura dos dados
 
-          resultado = '<COTACAO>' + '\n' + resultado.replace(regexXMLInicio, '<COTACOES>').replace(regexXMLFim, '</COTACOES>') + '\n' + '</COTACAO>';
-          diretorio = '/\/\SF009144/\Lucas/\GDP/\cotacoes.xml';
-          diretorioTeste = './cotacoes.xml';
+          resultado = "<COTACAO>" + "\n" + resultado.replace(regexXMLInicio, "<COTACOES>").replace(regexXMLFim, "</COTACOES>") + "\n" + "</COTACAO>";
           /**
            * O resultado final será armazenado no arquivo cotacoes.xml
            */
 
-          fs.writeFile(diretorioTeste, resultado, function (err) {
-            if (err) return console.log(err);
-            console.log("Arquivo cotacoes.xml gerado no diret\xF3rio ".concat(diretorioTeste, " em ").concat(data));
-          });
-          /**
-           * Tentando executar a chamada a função escreverArquivo() do arquivo JS externo, 
-           * é retornada a mensagem de que o segundo parâmetro "resultado" precisa ser do tipo buffer,
-           * faço uma conversão implicita mas ainda assim da erro, descomentar o require "util" no inicio do arquivo
-           * a linha abaixo e comentar a função writeFile acima para realizar esse teste
-           * util.escreverArquivo(diretorio, resultado.toString())
-           */
+          escreverArquivo(diretorioLocal, resultado);
 
         case 13:
         case "end":
@@ -99,18 +90,12 @@ var retornaCotacao = function retornaCotacao() {
       }
     }
   });
-}; //retornaCotacao() -- executar
-//Descomentar a linha abaixo para executar gerando o arquivo a partir da classe atual
-
+};
 
 retornaCotacao();
 /**
- * Os dados serão gerados diariamente as 18 horas
- */
-
-/*
+ * Cron para recarga automática, os dados serão gerados diariamente as 18 horas
 cron.schedule('0 18 * * *', (ctx) => {
-   retornaCotacao()
-
+  retornaCotacao()
 })
 */

@@ -13,72 +13,56 @@
  */
 
 const cron = require("node-cron");
-const axios = require('axios')
-const fs = require('fs');
-const convert = require('xml-js');
-//const util = require('./utils/utils');
+const axios = require("axios");
+const convert = require("xml-js");
 
-const dataInicial = '01-01-1990';
-const dataFinal = '12-31-2020';
+const { escreverArquivo, dataAtualFormatada } = require("./utils/utils"); //outra forma de importar várias funções do mesmo arquivo
+
+const dataInicial = "01-01-1990";
+const dataFinal = "12-31-2020";
 let link = `https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@dataInicial=%27${dataInicial}%27&@dataFinalCotacao=%27${dataFinal}%27&$format=json&$select=cotacaoCompra,cotacaoVenda,dataHoraCotacao`;
 
-
 const getCotacao = async () => {
-    try {
-        return await axios.get(link)
-    } catch (error) {
-        console.error(error)
-    }
-}
+  try {
+    return await axios.get(link);
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 const retornaCotacao = async () => {
-    const dados = await getCotacao()
-    let valores = dados.data.value;
-    const options = { compact: true, spaces: 4, ignoreText: false };
-    let resultado = convert.js2xml(valores, options);
-    //const diretorio = "/\SF009144/\Lucas/\GDP";
-    const regexXMLInicio = /<[0-9]+>/gm
-    const regexXMLFim = /<\/[0-9]+>/gm
-    let data = new Date();
+  const dados = await getCotacao();
+  const options = { compact: true, spaces: 4, ignoreText: false };
+  const regexXMLInicio = /<[0-9]+>/gm;
+  const regexXMLFim = /<\/[0-9]+>/gm;
+  const data = dataAtualFormatada();
+  const diretorioLucas = "//SF009144/Lucas/GDP/cotacoes.xml";
+  const diretorioLocal = "./cotacoes.xml";
 
-    //São aplicadas alterações nos dados retornados pelo WS, isso é necessário para que o Qlikview entenda a esrutura dos dados
-    resultado = '<COTACAO>' + '\n' + resultado.replace(regexXMLInicio, '<COTACOES>').replace(regexXMLFim, '</COTACOES>') + '\n' + '</COTACAO>'
-    let diretorio = '/\/\SF009144/\Lucas/\GDP/\cotacoes.xml'
-    let diretorioTeste = './cotacoes.xml'
-    /**
-     * O resultado final será armazenado no arquivo cotacoes.xml
-     */
+  let valores = dados.data.value;
+  let resultado = convert.js2xml(valores, options);
 
-    fs.writeFile(diretorioTeste, resultado, function (err) {
-        if (err) return console.log(err);
-        console.log(`Arquivo cotacoes.xml gerado no diretório ${diretorioTeste} em ${data}`);
-    });
+  //São aplicadas alterações nos dados retornados pelo WS, isso é necessário para que o Qlikview entenda a esrutura dos dados
+  resultado =
+    "<COTACAO>" +
+    "\n" +
+    resultado
+      .replace(regexXMLInicio, "<COTACOES>")
+      .replace(regexXMLFim, "</COTACOES>") +
+    "\n" +
+    "</COTACAO>";
 
-
-    /**
-     * Tentando executar a chamada a função escreverArquivo() do arquivo JS externo, 
-     * é retornada a mensagem de que o segundo parâmetro "resultado" precisa ser do tipo buffer,
-     * faço uma conversão implicita mas ainda assim da erro, descomentar o require "util" no inicio do arquivo
-     * a linha abaixo e comentar a função writeFile acima para realizar esse teste
-     * util.escreverArquivo(diretorio, resultado.toString())
-     */
-    
-}
-;
-//retornaCotacao() -- executar
-
-
-//Descomentar a linha abaixo para executar gerando o arquivo a partir da classe atual
-retornaCotacao()
+  /**
+   * O resultado final será armazenado no arquivo cotacoes.xml
+   */
+  escreverArquivo(diretorioLocal, resultado);
+};
+retornaCotacao();
 
 
 /**
- * Os dados serão gerados diariamente as 18 horas
- */
-
- /*
+ * Cron para recarga automática, os dados serão gerados diariamente as 18 horas
 cron.schedule('0 18 * * *', (ctx) => {
-    retornaCotacao()
-
+  retornaCotacao()
 })
 */
