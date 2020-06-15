@@ -19,7 +19,8 @@ var axios = require('axios');
 
 var fs = require('fs');
 
-var convert = require('xml-js');
+var convert = require('xml-js'); //const util = require('./utils/utils');
+
 
 var dataInicial = '01-01-1990';
 var dataFinal = '12-31-2020';
@@ -51,7 +52,7 @@ var getCotacao = function getCotacao() {
 };
 
 var retornaCotacao = function retornaCotacao() {
-  var dados, valores, options, resultado, diretorio, regexXMLInicio, regexXMLFim, data;
+  var dados, valores, options, resultado, regexXMLInicio, regexXMLFim, data, diretorio, diretorioTeste;
   return regeneratorRuntime.async(function retornaCotacao$(_context2) {
     while (1) {
       switch (_context2.prev = _context2.next) {
@@ -67,34 +68,49 @@ var retornaCotacao = function retornaCotacao() {
             spaces: 4,
             ignoreText: false
           };
-          resultado = convert.js2xml(valores, options);
-          diretorio = "/\SF009144/\Lucas/\GDP";
+          resultado = convert.js2xml(valores, options); //const diretorio = "/\SF009144/\Lucas/\GDP";
+
           regexXMLInicio = /<[0-9]+>/gm;
           regexXMLFim = /<\/[0-9]+>/gm;
           data = new Date(); //São aplicadas alterações nos dados retornados pelo WS, isso é necessário para que o Qlikview entenda a esrutura dos dados
 
           resultado = '<COTACAO>' + '\n' + resultado.replace(regexXMLInicio, '<COTACOES>').replace(regexXMLFim, '</COTACOES>') + '\n' + '</COTACAO>';
+          diretorio = '/\/\SF009144/\Lucas/\GDP/\cotacoes.xml';
+          diretorioTeste = './cotacoes.xml';
           /**
            * O resultado final será armazenado no arquivo cotacoes.xml
            */
 
-          fs.writeFile('/\/\SF009144/\Lucas/\GDP/\cotacoes.xml', resultado, function (err) {
+          fs.writeFile(diretorioTeste, resultado, function (err) {
             if (err) return console.log(err);
-            console.log("Arquivo cotacoes.xml gerado no diret\xF3rio ".concat(diretorio, " em ").concat(data));
+            console.log("Arquivo cotacoes.xml gerado no diret\xF3rio ".concat(diretorioTeste, " em ").concat(data));
           });
+          /**
+           * Tentando executar a chamada a função escreverArquivo() do arquivo JS externo, 
+           * é retornada a mensagem de que o segundo parâmetro "resultado" precisa ser do tipo buffer,
+           * faço uma conversão implicita mas ainda assim da erro, descomentar o require "util" no inicio do arquivo
+           * a linha abaixo e comentar a função writeFile acima para realizar esse teste
+           * util.escreverArquivo(diretorio, resultado.toString())
+           */
 
-        case 12:
+        case 13:
         case "end":
           return _context2.stop();
       }
     }
   });
-};
+}; //retornaCotacao() -- executar
+//Descomentar a linha abaixo para executar gerando o arquivo a partir da classe atual
+
+
+retornaCotacao();
 /**
  * Os dados serão gerados diariamente as 18 horas
  */
 
+/*
+cron.schedule('0 18 * * *', (ctx) => {
+   retornaCotacao()
 
-cron.schedule('0 18 * * *', function (ctx) {
-  retornaCotacao();
-});
+})
+*/

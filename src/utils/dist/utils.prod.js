@@ -1,0 +1,1 @@
+"use strict";var fs=require("fs");function escreverArquivo(r,e){fs.writeFile(r,e,function(e){var o=new Date;return e?console.log(e):console.log("Arquivo cotacoes.xml gerado no diretório ".concat(r," em ").concat(o))})}module.exports=escreverArquivo();
