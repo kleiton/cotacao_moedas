@@ -9,7 +9,7 @@
   "author": "Kleiton Moraes",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "node-cron": "^2.0.3",
     "xml-js": "^1.6.11"
   }
